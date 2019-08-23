@@ -190,6 +190,11 @@ abstract class FieldType
      */
     abstract public function isSingular();
 
+    public function isThumbnail(): bool
+    {
+        return true;
+    }
+
     /**
      * Indicates if the field definition of this type can be added to a ContentType with Content instances.
      *

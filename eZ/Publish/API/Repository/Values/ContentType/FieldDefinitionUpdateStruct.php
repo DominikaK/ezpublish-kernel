@@ -66,6 +66,8 @@ class FieldDefinitionUpdateStruct extends ValueObject
      */
     public $isRequired;
 
+    public $isThumbnail;
+
     /**
      * If set the information collector flag is set to this value.
      *

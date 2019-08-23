@@ -81,6 +81,8 @@ class FieldDefinition extends ValueObject
      */
     public $isRequired;
 
+    public $isThumbnail;
+
     /**
      * Just a flag.
      *

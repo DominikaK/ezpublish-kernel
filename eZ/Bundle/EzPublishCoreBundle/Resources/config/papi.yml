@@ -75,3 +75,31 @@ services:
             - '@ezpublish.spi.search'
         tags:
             - { name: kernel.event_subscriber }
+
+    eZ\Publish\Core\FieldType\Image\ImageThumbnailStrategy: ~
+    eZ\Publish\Core\FieldType\ImageAsset\ImageAssetThumbnailStrategy:
+        lazy: true
+        arguments:
+            $thumbnailStrategy: '@eZ\Publish\Core\Repository\Strategy\ContentThumbnail\ThumbnailChainStrategy'
+            $contentService: '@ezpublish.api.service.content'
+
+    eZ\Publish\Core\Repository\Strategy\ContentThumbnail\Field\ContentFieldStrategy:
+        arguments:
+            $strategies:
+                ezimage: '@eZ\Publish\Core\FieldType\Image\ImageThumbnailStrategy'
+                ezimageasset: '@eZ\Publish\Core\FieldType\ImageAsset\ImageAssetThumbnailStrategy'
+
+    eZ\Publish\Core\Repository\Strategy\ContentThumbnail\StaticStrategy:
+        arguments:
+            $staticThumbnail: 'https://via.placeholder.com/150'
+
+    eZ\Publish\Core\Repository\Strategy\ContentThumbnail\FirstMatchingFieldStrategy:
+        arguments:
+            $fieldTypeService: '@ezpublish.api.service.field_type'
+            $contentFieldStrategy: '@eZ\Publish\Core\Repository\Strategy\ContentThumbnail\Field\ContentFieldStrategy'
+
+    eZ\Publish\Core\Repository\Strategy\ContentThumbnail\ThumbnailChainStrategy:
+        arguments:
+            $strategies:
+                0: '@eZ\Publish\Core\Repository\Strategy\ContentThumbnail\FirstMatchingFieldStrategy'
+                255: '@eZ\Publish\Core\Repository\Strategy\ContentThumbnail\StaticStrategy'

@@ -140,6 +140,11 @@ class FieldType implements FieldTypeInterface
         return $this->internalFieldType->isSingular();
     }
 
+    public function isThumbnail(): bool
+    {
+        return $this->internalFieldType->isThumbnail();
+    }
+
     /**
      * Indicates if the field definition of this type can be added to a ContentType with Content instances.
      *

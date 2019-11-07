@@ -13,6 +13,7 @@ parameters:
     ezpublish.urlalias_generator.class: eZ\Publish\Core\MVC\Symfony\Routing\Generator\UrlAliasGenerator
     ezpublish.siteaccess.matcher_builder.class: eZ\Bundle\EzPublishCoreBundle\SiteAccess\MatcherBuilder
     ezpublish.siteaccess_router.class: eZ\Publish\Core\MVC\Symfony\SiteAccess\Router
+    ezpublish.siteaccess_service.class: eZ\Publish\Core\MVC\Symfony\SiteAccess\SiteAccessService
     ezpublish.siteaccess_listener.class: eZ\Bundle\EzPublishCoreBundle\EventListener\SiteAccessListener
     ezpublish.siteaccess_listener.routing.class: eZ\Bundle\EzPublishCoreBundle\EventListener\RoutingListener
     ezpublish.request_redirect_listener.class: eZ\Bundle\EzPublishCoreBundle\EventListener\RequestEventListener
@@ -91,6 +92,13 @@ services:
 
     ezpublish.siteaccess.provider:
         alias: ezpublish.siteaccess.provider.chain
+
+    ezpublish.siteaccess_service:
+        class: "%ezpublish.siteaccess_service.class%"
+        arguments:
+            - "@ezpublish.siteaccess.provider"
+        calls:
+            - [setSiteAccess, ['@ezpublish.siteaccess']]
 
     ezpublish.siteaccess_router:
         class: "%ezpublish.siteaccess_router.class%"

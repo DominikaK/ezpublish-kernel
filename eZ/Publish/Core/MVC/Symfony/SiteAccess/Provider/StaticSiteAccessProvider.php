@@ -11,6 +11,7 @@ namespace eZ\Publish\Core\MVC\Symfony\SiteAccess\Provider;
 use eZ\Publish\Core\Base\Exceptions\NotFoundException;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess;
 use eZ\Publish\Core\MVC\Symfony\SiteAccess\SiteAccessProviderInterface;
+use eZ\Publish\Core\MVC\Symfony\SiteAccessGroup;
 use Traversable;
 
 /**
@@ -23,13 +24,19 @@ final class StaticSiteAccessProvider implements SiteAccessProviderInterface
     /** @var string[] */
     private $siteAccessList;
 
+    /** @var string[] */
+    private $groupsBySiteAccess;
+
     /**
      * @param string[] $siteAccessList
+     * @param string[] $groupsBySiteAccess
      */
     public function __construct(
-        array $siteAccessList
+        array $siteAccessList,
+        array $groupsBySiteAccess = []
     ) {
         $this->siteAccessList = $siteAccessList;
+        $this->groupsBySiteAccess = $groupsBySiteAccess;
     }
 
     public function getSiteAccesses(): Traversable
@@ -49,7 +56,15 @@ final class StaticSiteAccessProvider implements SiteAccessProviderInterface
     public function getSiteAccess(string $name): SiteAccess
     {
         if ($this->isDefined($name)) {
-            return new SiteAccess($name, SiteAccess::DEFAULT_MATCHING_TYPE, null, self::class);
+            $siteAccess = new SiteAccess($name, SiteAccess::DEFAULT_MATCHING_TYPE, null, self::class);
+            $siteAccess->groups = array_map(
+                static function ($groupName) {
+                    return new SiteAccessGroup($groupName);
+                },
+                $this->groupsBySiteAccess[$name]
+            ) ?? [];
+
+            return $siteAccess;
         }
 
         throw new NotFoundException('Site Access', $name);

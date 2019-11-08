@@ -18,16 +18,25 @@ final class ChainSiteAccessProviderTest extends TestCase
 {
     private const EXISTING_SA_NAME = 'existing_sa';
     private const UNDEFINED_SA_NAME = 'undefined_sa';
+    private const SA_GROUP = 'group';
 
     /** @var \eZ\Publish\Core\MVC\Symfony\SiteAccess\SiteAccessProviderInterface[] */
     private $providers;
 
+    /** @var array */
+    private $groupsBySiteAccess;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->groupsBySiteAccess = [
+            self::EXISTING_SA_NAME => [self::SA_GROUP],
+            'first_sa' => [self::SA_GROUP],
+            'second_sa' => [self::SA_GROUP],
+        ];
         $this->providers = [
-            new StaticSiteAccessProvider([self::EXISTING_SA_NAME, 'first_sa']),
-            new StaticSiteAccessProvider(['second_sa']),
+            new StaticSiteAccessProvider([self::EXISTING_SA_NAME, 'first_sa'], $this->groupsBySiteAccess),
+            new StaticSiteAccessProvider(['second_sa'], $this->groupsBySiteAccess),
         ];
     }
 
@@ -78,13 +87,15 @@ final class ChainSiteAccessProviderTest extends TestCase
     public function testGetExistingSiteAccess(): void
     {
         $chainSiteAccessProvider = $this->getChainSiteAccessProvider();
+        $expectedSiteAccess = new SiteAccess(
+            self::EXISTING_SA_NAME,
+            SiteAccess::DEFAULT_MATCHING_TYPE,
+            null,
+            StaticSiteAccessProvider::class
+        );
+        $expectedSiteAccess->groups = [self::SA_GROUP];
         $this->assertEquals(
-            new SiteAccess(
-                self::EXISTING_SA_NAME,
-                SiteAccess::DEFAULT_MATCHING_TYPE,
-                null,
-                StaticSiteAccessProvider::class
-            ),
+            $expectedSiteAccess,
             $chainSiteAccessProvider->getSiteAccess(self::EXISTING_SA_NAME)
         );
     }

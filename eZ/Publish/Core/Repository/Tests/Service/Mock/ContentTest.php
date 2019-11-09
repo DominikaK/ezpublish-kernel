@@ -368,6 +368,8 @@ class ContentTest extends BaseServiceMockTest
      */
     public function testLoadVersionInfo()
     {
+        $expectedResult = $this->createMock(VersionInfo::class);
+
         $contentServiceMock = $this->getPartlyMockedContentService(
             ['loadVersionInfoById']
         );
@@ -379,7 +381,7 @@ class ContentTest extends BaseServiceMockTest
             $this->equalTo(42),
             $this->equalTo(7)
         )->will(
-            $this->returnValue('result')
+            $this->returnValue($expectedResult)
         );
 
         $result = $contentServiceMock->loadVersionInfo(
@@ -387,7 +389,7 @@ class ContentTest extends BaseServiceMockTest
             7
         );
 
-        $this->assertEquals('result', $result);
+        $this->assertEquals($expectedResult, $result);
     }
 
     public function testLoadContent()
@@ -611,6 +613,8 @@ class ContentTest extends BaseServiceMockTest
      */
     public function testLoadContentByContentInfo()
     {
+        $expectedResult = $this->createMock(Content::class);
+
         $contentServiceMock = $this->getPartlyMockedContentService(
             ['loadContent']
         );
@@ -624,7 +628,7 @@ class ContentTest extends BaseServiceMockTest
             $this->equalTo(7),
             $this->equalTo(false)
         )->will(
-            $this->returnValue('result')
+            $this->returnValue($expectedResult)
         );
 
         $result = $contentServiceMock->loadContentByContentInfo(
@@ -633,7 +637,7 @@ class ContentTest extends BaseServiceMockTest
             7
         );
 
-        $this->assertEquals('result', $result);
+        $this->assertEquals($expectedResult, $result);
     }
 
     /**
@@ -643,6 +647,8 @@ class ContentTest extends BaseServiceMockTest
      */
     public function testLoadContentByVersionInfo()
     {
+        $expectedResult = $this->createMock(Content::class);
+
         $contentServiceMock = $this->getPartlyMockedContentService(
             ['loadContent']
         );
@@ -656,7 +662,7 @@ class ContentTest extends BaseServiceMockTest
             $this->equalTo(7),
             $this->equalTo(false)
         )->will(
-            $this->returnValue('result')
+            $this->returnValue($expectedResult)
         );
 
         $result = $contentServiceMock->loadContentByVersionInfo(
@@ -669,7 +675,7 @@ class ContentTest extends BaseServiceMockTest
             ['cro-HR']
         );
 
-        $this->assertEquals('result', $result);
+        $this->assertEquals($expectedResult, $result);
     }
 
     /**
@@ -1020,7 +1026,7 @@ class ContentTest extends BaseServiceMockTest
         $mockedService->expects($this->once())
             ->method('loadContentByRemoteId')
             ->with($contentCreateStruct->remoteId)
-            ->will($this->returnValue('Hello...'));
+            ->will($this->returnValue($this->createMock(Content::class)));
 
         $mockedService->createContent(
             new ContentCreateStruct(
@@ -1365,7 +1371,8 @@ class ContentTest extends BaseServiceMockTest
                 ->with(
                     $this->isInstanceOf(SPIContent::class),
                     $this->equalTo($contentType)
-                );
+                )
+                ->willReturn($this->createMock(APIContent::class));
 
             $mockedService->createContent($contentCreateStruct, []);
         }
@@ -2541,7 +2548,8 @@ class ContentTest extends BaseServiceMockTest
             ->with(
                 $this->isInstanceOf(SPIContent::class),
                 $this->isInstanceOf(APIContentType::class)
-            );
+            )
+            ->willReturn($this->createMock(APIContent::class));
 
         $repositoryMock->expects($this->once())->method('commit');
 
@@ -2778,7 +2786,8 @@ class ContentTest extends BaseServiceMockTest
             ->with(
                 $this->isInstanceOf(SPIContent::class),
                 $this->isInstanceOf(APIContentType::class)
-            );
+            )
+            ->willReturn($this->createMock(APIContent::class));
 
         $repositoryMock->expects($this->once())->method('commit');
 
@@ -3310,7 +3319,8 @@ class ContentTest extends BaseServiceMockTest
                 ->with(
                     $this->isInstanceOf(SPIContent::class),
                     $this->isInstanceOf(APIContentType::class)
-                );
+                )
+                ->willReturn($this->createMock(APIContent::class));
 
             $mockedService->updateContent($content->versionInfo, $contentUpdateStruct);
         }

@@ -116,7 +116,7 @@ class ContentService extends ContentServiceDecorator
         return $content;
     }
 
-    public function deleteContent(ContentInfo $contentInfo): array
+    public function deleteContent(ContentInfo $contentInfo): iterable
     {
         $eventData = [$contentInfo];
 
@@ -140,8 +140,8 @@ class ContentService extends ContentServiceDecorator
 
     public function createContentDraft(
         ContentInfo $contentInfo,
-        VersionInfo $versionInfo = null,
-        User $creator = null
+        ?VersionInfo $versionInfo = null,
+        ?User $creator = null
     ): Content {
         $eventData = [
             $contentInfo,
@@ -240,7 +240,7 @@ class ContentService extends ContentServiceDecorator
     public function copyContent(
         ContentInfo $contentInfo,
         LocationCreateStruct $destinationLocationCreateStruct,
-        VersionInfo $versionInfo = null
+        ?VersionInfo $versionInfo = null
     ): Content {
         $eventData = [
             $contentInfo,
@@ -318,7 +318,7 @@ class ContentService extends ContentServiceDecorator
 
     public function deleteTranslation(
         ContentInfo $contentInfo,
-        $languageCode
+        string $languageCode
     ): void {
         $eventData = [
             $contentInfo,

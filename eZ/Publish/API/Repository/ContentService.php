@@ -75,7 +75,7 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed to load this version
      *
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
-     * @param int $versionNo the version number. If not given the current version is returned.
+     * @param int|null $versionNo the version number. If not given the current version is returned.
      *
      * @return \eZ\Publish\API\Repository\Values\Content\VersionInfo
      */
@@ -89,8 +89,8 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException - if the version with the given number does not exist
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed to load this version
      *
-     * @param mixed $contentId
-     * @param int $versionNo the version number. If not given the current version is returned.
+     * @param int $contentId
+     * @param int|null $versionNo the version number. If not given the current version is returned.
      *
      * @return \eZ\Publish\API\Repository\Values\Content\VersionInfo
      */
@@ -107,7 +107,7 @@ interface ContentService
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
      * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
      *                         returned value object. If not given all languages are returned.
-     * @param int $versionNo the version number. If not given the current version is returned from $contentInfo
+     * @param int|null $versionNo the version number. If not given the current version is returned from $contentInfo
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content
@@ -120,7 +120,7 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed to load this version
      *
      * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo $versionInfo
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
      *                         returned value object. If not given all languages are returned.
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
@@ -137,9 +137,9 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException If the user has no access to read content and in case of un-published content: read versions
      *
      * @param mixed $contentId
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
      *                         returned value object. If not given all languages are returned.
-     * @param int $versionNo the version number. If not given the current version is returned
+     * @param int|null $versionNo the version number. If not given the current version is returned
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content
@@ -155,9 +155,9 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException If the user has no access to read content and in case of un-published content: read versions
      *
      * @param string $remoteId
-     * @param array $languages A language priority, filters returned fields and is used as prioritized language code on
+     * @param string[] $languages A language priority, filters returned fields and is used as prioritized language code on
      *                         returned value object. If not given all languages are returned.
-     * @param int $versionNo the version number. If not given the current version is returned
+     * @param int|null $versionNo the version number. If not given the current version is returned
      * @param bool $useAlwaysAvailable Add Main language to \$languages if true (default) and if alwaysAvailable is true
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content
@@ -227,7 +227,7 @@ interface ContentService
      *
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
      *
-     * @return mixed[] Affected Location Id's (List of Locations of the Content that was deleted)
+     * @return int[] Affected Location Id's (List of Locations of the Content that was deleted)
      */
     public function deleteContent(ContentInfo $contentInfo): iterable;
 
@@ -241,8 +241,8 @@ interface ContentService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the current-user is not allowed to create the draft
      *
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
-     * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo $versionInfo
-     * @param \eZ\Publish\API\Repository\Values\User\User $creator Used as creator of the draft if given - otherwise uses current-user
+     * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo|null $versionInfo
+     * @param \eZ\Publish\API\Repository\Values\User\User|null $creator Used as creator of the draft if given - otherwise uses current-user
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content - the newly created content draft
      */

@@ -205,7 +205,7 @@ class ContentService implements ContentServiceInterface
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed to load this version
      *
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
-     * @param int $versionNo the version number. If not given the current version is returned.
+     * @param int|null $versionNo the version number. If not given the current version is returned.
      *
      * @return \eZ\Publish\API\Repository\Values\Content\VersionInfo
      */
@@ -222,8 +222,8 @@ class ContentService implements ContentServiceInterface
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException - if the version with the given number does not exist
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the user is not allowed to load this version
      *
-     * @param mixed $contentId
-     * @param int $versionNo the version number. If not given the current version is returned.
+     * @param int $contentId
+     * @param int|null $versionNo the version number. If not given the current version is returned.
      *
      * @return \eZ\Publish\API\Repository\Values\Content\VersionInfo
      */
@@ -1063,8 +1063,8 @@ class ContentService implements ContentServiceInterface
      * It can be changed on updating the version.
      *
      * @param \eZ\Publish\API\Repository\Values\Content\ContentInfo $contentInfo
-     * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo $versionInfo
-     * @param \eZ\Publish\API\Repository\Values\User\User $creator if set given user is used to create the draft - otherwise the current-user is used
+     * @param \eZ\Publish\API\Repository\Values\Content\VersionInfo|null $versionInfo
+     * @param \eZ\Publish\API\Repository\Values\User\User|null $creator if set given user is used to create the draft - otherwise the current-user is used
      *
      * @return \eZ\Publish\API\Repository\Values\Content\Content - the newly created content draft
      *

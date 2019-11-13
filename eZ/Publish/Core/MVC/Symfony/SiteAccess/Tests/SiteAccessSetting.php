@@ -15,10 +15,13 @@ use eZ\Publish\Core\MVC\Symfony\SiteAccess;
  */
 final class SiteAccessSetting
 {
+    /** @var string */
     public $name;
 
+    /** @var bool */
     public $isDefined;
 
+    /** @var string */
     public $matchingType;
 
     public function __construct(

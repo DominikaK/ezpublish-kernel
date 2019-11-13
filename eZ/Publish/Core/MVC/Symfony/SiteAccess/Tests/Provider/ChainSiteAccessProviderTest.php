@@ -25,6 +25,7 @@ final class ChainSiteAccessProviderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         $this->providers = [
             new StaticSiteAccessProvider([self::EXISTING_SA_NAME, 'first_sa']),
             new StaticSiteAccessProvider(['second_sa']),

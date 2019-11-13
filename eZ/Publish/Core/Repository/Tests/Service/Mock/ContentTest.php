@@ -195,7 +195,7 @@ class ContentTest extends BaseServiceMockTest
      */
     public function testLoadVersionInfoByIdThrowsNotFoundException()
     {
-        $this->expectException(\eZ\Publish\Core\Base\Exceptions\NotFoundException::class);
+        $this->expectException(NotFoundException::class);
 
         $contentServiceMock = $this->getPartlyMockedContentService(['loadContentInfo']);
         /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
@@ -394,7 +394,7 @@ class ContentTest extends BaseServiceMockTest
 
     public function testLoadContent()
     {
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContent']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentById']);
         $content = $this->createMock(APIContent::class);
         $versionInfo = $this->createMock(APIVersionInfo::class);
         $permissionResolver = $this->getPermissionResolverMock();
@@ -410,7 +410,7 @@ class ContentTest extends BaseServiceMockTest
         $contentId = 123;
         $contentService
             ->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with($contentId)
             ->will($this->returnValue($content));
 
@@ -425,7 +425,7 @@ class ContentTest extends BaseServiceMockTest
 
     public function testLoadContentNonPublished()
     {
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContent']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentById']);
         $content = $this->createMock(APIContent::class);
         $versionInfo = $this->createMock(APIVersionInfo::class);
         $permissionResolver = $this->getPermissionResolverMock();
@@ -437,7 +437,7 @@ class ContentTest extends BaseServiceMockTest
         $contentId = 123;
         $contentService
             ->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with($contentId)
             ->will($this->returnValue($content));
 
@@ -462,12 +462,12 @@ class ContentTest extends BaseServiceMockTest
 
         $permissionResolver = $this->getPermissionResolverMock();
 
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContent']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentById']);
         $content = $this->createMock(APIContent::class);
         $contentId = 123;
         $contentService
             ->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with($contentId)
             ->will($this->returnValue($content));
 
@@ -485,7 +485,7 @@ class ContentTest extends BaseServiceMockTest
         $this->expectException(\eZ\Publish\Core\Base\Exceptions\UnauthorizedException::class);
 
         $permissionResolver = $this->getPermissionResolverMock();
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContent']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentById']);
         $content = $this->createMock(APIContent::class);
         $versionInfo = $this
             ->getMockBuilder(APIVersionInfo::class)
@@ -497,7 +497,7 @@ class ContentTest extends BaseServiceMockTest
         $contentId = 123;
         $contentService
             ->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with($contentId)
             ->will($this->returnValue($content));
 
@@ -517,82 +517,134 @@ class ContentTest extends BaseServiceMockTest
     }
 
     /**
-     * @dataProvider internalLoadContentProvider
+     * @dataProvider internalLoadContentProviderById
      */
-    public function testInternalLoadContent($id, $languages, $versionNo, $isRemoteId, $useAlwaysAvailable)
+    public function testInternalLoadContentById(int $id, ?array $languages, ?int $versionNo, bool $useAlwaysAvailable): void
     {
-        $contentService = $this->getPartlyMockedContentService();
-        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
-        $contentHandler = $this->getPersistenceMock()->contentHandler();
-        $realId = $id;
-
-        if ($isRemoteId) {
-            $realId = 123;
-            $spiContentInfo = new SPIContentInfo(['currentVersionNo' => $versionNo ?: 7, 'id' => $realId]);
-            $contentHandler
-                ->expects($this->once())
-                ->method('loadContentInfoByRemoteId')
-                ->with($id)
-                ->will($this->returnValue($spiContentInfo));
-        } elseif (!empty($languages) && $useAlwaysAvailable) {
-            $spiContentInfo = new SPIContentInfo(['alwaysAvailable' => false]);
-            $contentHandler
-                ->expects($this->once())
-                ->method('loadContentInfo')
-                ->with($id)
-                ->will($this->returnValue($spiContentInfo));
+        if (!empty($languages) && $useAlwaysAvailable) {
+            $spiContentInfo = new SPIContentInfo(['id' => $id, 'alwaysAvailable' => false]);
+        } else {
+            $spiContentInfo = new SPIContentInfo(['id' => $id]);
         }
 
         $spiContent = new SPIContent([
             'versionInfo' => new VersionInfo([
-                    'contentInfo' => new ContentInfo(['id' => 42, 'contentTypeId' => 123]),
+                'contentInfo' => new ContentInfo([
+                    'id' => 42,
+                    'contentTypeId' => 123,
+                ]),
             ]),
         ]);
+
+        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
+        $contentHandler = $this->getPersistenceMock()->contentHandler();
+        $contentHandler
+            ->expects($this->once())
+            ->method('loadContentInfo')
+            ->with($id)
+            ->will($this->returnValue($spiContentInfo));
+
+        $contentHandler
+            ->expects($this->once())
+            ->method('load')
+            ->with($id, $versionNo, $languages)
+            ->willReturn($spiContent);
+
+        $contentService = $this->getPartlyMockedContentService();
+
+        $expectedContent = $this->mockBuildContentDomainObject($spiContent, $languages);
+        $actualContent = $contentService->internalLoadContentById($id, $languages, $versionNo, $useAlwaysAvailable);
+
+        $this->assertSame($expectedContent, $actualContent);
+    }
+
+    /**
+     * @dataProvider internalLoadContentProviderByRemoteId
+     */
+    public function testInternalLoadContentByRemoteId(string $remoteId, ?array $languages, ?int $versionNo, bool $useAlwaysAvailable)
+    {
+        $realId = 123;
+
+        $spiContentInfo = new SPIContentInfo([
+            'currentVersionNo' => $versionNo ?: 7,
+            'id' => $realId,
+        ]);
+
+        $spiContent = new SPIContent([
+            'versionInfo' => new VersionInfo([
+                'contentInfo' => new ContentInfo(['id' => 42, 'contentTypeId' => 123]),
+            ]),
+        ]);
+
+        $contentService = $this->getPartlyMockedContentService();
+        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
+        $contentHandler = $this->getPersistenceMock()->contentHandler();
+        $contentHandler
+            ->expects($this->once())
+            ->method('loadContentInfoByRemoteId')
+            ->with($remoteId)
+            ->will($this->returnValue($spiContentInfo));
+
         $contentHandler
             ->expects($this->once())
             ->method('load')
             ->with($realId, $versionNo, $languages)
             ->willReturn($spiContent);
 
-        $content = $this->mockBuildContentDomainObject($spiContent, $languages);
+        $expectedContent = $this->mockBuildContentDomainObject($spiContent, $languages);
 
-        $this->assertSame(
-            $content,
-            $contentService->internalLoadContent($id, $languages, $versionNo, $isRemoteId, $useAlwaysAvailable)
+        $actualContent = $contentService->internalLoadContentByRemoteId(
+            $remoteId,
+            $languages,
+            $versionNo,
+            $useAlwaysAvailable
         );
+
+        $this->assertSame($expectedContent, $actualContent);
     }
 
-    public function internalLoadContentProvider()
+    public function internalLoadContentProviderById(): array
     {
         return [
-            [123, null, null, false, false],
-            [123, null, 456, false, false],
-            [456, null, 123, false, true],
-            [456, null, 2, false, false],
-            [456, ['eng-GB'], 2, false, true],
-            [456, ['eng-GB', 'fre-FR'], null, false, false],
-            [456, ['eng-GB', 'fre-FR', 'nor-NO'], 2, false, false],
-            // With remoteId
-            [123, null, null, true, false],
-            ['someRemoteId', null, 456, true, false],
-            [456, null, 123, true, false],
-            ['someRemoteId', null, 2, true, false],
-            ['someRemoteId', ['eng-GB'], 2, true, false],
-            [456, ['eng-GB', 'fre-FR'], null, true, false],
-            ['someRemoteId', ['eng-GB', 'fre-FR', 'nor-NO'], 2, true, false],
+            [123, null, null, false],
+            [123, null, 456, false],
+            [456, null, 123, true],
+            [456, null, 2, false],
+            [456, ['eng-GB'], 2, true],
+            [456, ['eng-GB', 'fre-FR'], null, false],
+            [456, ['eng-GB', 'fre-FR', 'nor-NO'], 2, false],
         ];
     }
 
-    public function testInternalLoadContentNotFound()
+    public function internalLoadContentProviderByRemoteId(): array
     {
-        $this->expectException(\eZ\Publish\Core\Base\Exceptions\NotFoundException::class);
+        return [
+            ['123', null, null, false],
+            ['someRemoteId', null, 456, false],
+            ['456', null, 123, false],
+            ['someRemoteId', null, 2, false],
+            ['someRemoteId', ['eng-GB'], 2, false],
+            ['456', ['eng-GB', 'fre-FR'], null, false],
+            ['someRemoteId', ['eng-GB', 'fre-FR', 'nor-NO'], 2, false],
+        ];
+    }
 
-        $contentService = $this->getPartlyMockedContentService();
-        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
-        $contentHandler = $this->getPersistenceMock()->contentHandler();
+    public function testInternalLoadContentByIdNotFound(): void
+    {
+        $this->expectException(NotFoundException::class);
+
         $id = 123;
         $versionNo = 7;
         $languages = null;
+
+        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
+        $contentHandler = $this->getPersistenceMock()->contentHandler();
+        $contentHandler
+            ->expects($this->once())
+            ->method('loadContentInfo')
+            ->with($id)
+            ->willReturn(new SPIContent\ContentInfo(['id' => $id]));
+
         $contentHandler
             ->expects($this->once())
             ->method('load')
@@ -603,7 +655,37 @@ class ContentTest extends BaseServiceMockTest
                 )
             );
 
-        $contentService->internalLoadContent($id, $languages, $versionNo);
+        $contentService = $this->getPartlyMockedContentService();
+        $contentService->internalLoadContentById($id, $languages, $versionNo);
+    }
+
+    public function testInternalLoadContentByRemoteIdNotFound(): void
+    {
+        $this->expectException(NotFoundException::class);
+
+        $remoteId = 'dca290623518d393126d3408b45af6ee';
+        $id = 123;
+        $versionNo = 7;
+        $languages = null;
+
+        /** @var \PHPUnit\Framework\MockObject\MockObject $contentHandler */
+        $contentHandler = $this->getPersistenceMock()->contentHandler();
+        $contentHandler
+            ->expects($this->once())
+            ->method('loadContentInfoByRemoteId')
+            ->with($remoteId)
+            ->willReturn(new SPIContent\ContentInfo(['id' => $id]));
+
+        $contentHandler
+            ->expects($this->once())
+            ->method('load')
+            ->with($id, $versionNo, $languages)
+            ->willThrowException(
+                $this->createMock(APINotFoundException::class)
+            );
+
+        $contentService = $this->getPartlyMockedContentService();
+        $contentService->internalLoadContentByRemoteId($remoteId, $languages, $versionNo);
     }
 
     /**
@@ -688,7 +770,7 @@ class ContentTest extends BaseServiceMockTest
         $this->expectException(\eZ\Publish\Core\Base\Exceptions\UnauthorizedException::class);
 
         $permissionResolver = $this->getPermissionResolverMock();
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfo']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfoById']);
         $contentInfo = $this->createMock(APIContentInfo::class);
 
         $contentInfo->expects($this->any())
@@ -697,7 +779,7 @@ class ContentTest extends BaseServiceMockTest
             ->will($this->returnValue(42));
 
         $contentService->expects($this->once())
-            ->method('internalLoadContentInfo')
+            ->method('internalLoadContentInfoById')
             ->with(42)
             ->will($this->returnValue($contentInfo));
 
@@ -725,7 +807,7 @@ class ContentTest extends BaseServiceMockTest
             ->with('content', 'remove')
             ->will($this->returnValue(true));
 
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfo']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfoById']);
         /** @var \PHPUnit\Framework\MockObject\MockObject $urlAliasHandler */
         $urlAliasHandler = $this->getPersistenceMock()->urlAliasHandler();
         /** @var \PHPUnit\Framework\MockObject\MockObject $locationHandler */
@@ -736,7 +818,7 @@ class ContentTest extends BaseServiceMockTest
         $contentInfo = $this->createMock(APIContentInfo::class);
 
         $contentService->expects($this->once())
-            ->method('internalLoadContentInfo')
+            ->method('internalLoadContentInfoById')
             ->with(42)
             ->will($this->returnValue($contentInfo));
 
@@ -789,14 +871,14 @@ class ContentTest extends BaseServiceMockTest
             ->with('content', 'remove')
             ->will($this->returnValue(true));
 
-        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfo']);
+        $contentService = $this->getPartlyMockedContentService(['internalLoadContentInfoById']);
         /** @var \PHPUnit\Framework\MockObject\MockObject $locationHandler */
         $locationHandler = $this->getPersistenceMock()->locationHandler();
 
         $contentInfo = $this->createMock(APIContentInfo::class);
 
         $contentService->expects($this->once())
-            ->method('internalLoadContentInfo')
+            ->method('internalLoadContentInfoById')
             ->with(42)
             ->will($this->returnValue($contentInfo));
 
@@ -5462,7 +5544,7 @@ class ContentTest extends BaseServiceMockTest
         $repositoryMock = $this->getRepositoryMock();
         $contentService = $this->getPartlyMockedContentService([
             'internalLoadContentInfo',
-            'internalLoadContent',
+            'internalLoadContentById',
             'getUnixTimestamp',
         ]);
         $locationServiceMock = $this->getLocationServiceMock();
@@ -5568,7 +5650,7 @@ class ContentTest extends BaseServiceMockTest
             );
 
         $contentService->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with(
                 $content->id
             )
@@ -5593,8 +5675,7 @@ class ContentTest extends BaseServiceMockTest
     {
         $repositoryMock = $this->getRepositoryMock();
         $contentService = $this->getPartlyMockedContentService([
-            'internalLoadContentInfo',
-            'internalLoadContent',
+            'internalLoadContentById',
             'getUnixTimestamp',
         ]);
         $locationServiceMock = $this->getLocationServiceMock();
@@ -5697,7 +5778,7 @@ class ContentTest extends BaseServiceMockTest
             );
 
         $contentService->expects($this->once())
-            ->method('internalLoadContent')
+            ->method('internalLoadContentById')
             ->with(
                 $content->id
             )
